@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Data Entry</title>
+    <style>
+        :root {
+            --primary: #ff6600;       /* Vibrant Orange */
+            --primary-hover: #ff8533; /* Lighter Orange for interaction */
+            --background: #121212;    /* Deep Matte Black/Charcoal */
+            --card-bg: #1a1a1a;       /* Solid Jet Black for the form card */
+            --text: #ffffff;          /* White text for high visibility */
+            --text-muted: #a3a3a3;    /* Muted grey for placeholders */
+            --border: #333333;        /* Dark grey borders */
+            --border-focus: #ff6600;  /* Orange highlight on click */
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #262626;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            background-color: #222222;
+            color: var(--text);
+        }
+
+        /* Adjust placeholder styles for dark theme */
+        ::placeholder {
+            color: var(--text-muted);
+            opacity: 1;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        /* Custom orange arrow for dropdowns */
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://w3.org' viewBox='0 0 24 24' fill='none' stroke='%23ff6600' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2);
+        }
+
+        input[readonly] {
+            background-color: #151515;
+            color: var(--primary);
+            border-style: dashed;
+            border-color: #444444;
+            cursor: not-allowed;
+            font-weight: bold;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: #000000; /* Bold black text on the orange button */
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            .grid-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Vessel Data Report</h2>
+        
+        <!-- Replace 'YOUR_FORMSPREE_ID' with your actual Formspree ID later -->
+        <form action="https://formspree.io" method="POST">
+            
+            <div class="form-group">
+                <label for="vesselName">Vessel Name</label>
+                <input type="text" id="vesselName" name="Vessel Name" required placeholder="Enter vessel name">
+            </div>
+
+            <div class="grid-row">
+                <div class="form-group">
+                    <label for="vesselLength">Vessel Length (m)</label>
+                    <input type="number" step="0.1" id="vesselLength" name="Vessel Length" required placeholder="e.g. 15.5">
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="Date" required>
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div class="form-group">
+                    <label for="slingType">Sling Type</label>
+                    <select id="slingType" name="Sling Type" required>
+                        <option value="" disabled selected>Select...</option>
+                        <option value="Short">Short</option>
+                        <option value="Long">Long</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="numSlings">Number of Slings</label>
+                    <select id="numSlings" name="Number of Slings" required>
+                        <option value="" disabled selected>Select...</option>
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-row">
+                <div class="form-group">
+                    <label for="weightFwd">Weight FWD (tons)</label>
+                    <input type="number" step="0.01" id="weightFwd" name="Weight FWD" required placeholder="0.00" oninput="calculateTotal()">
+                </div>
+
+                <div class="form-group">
+                    <label for="weightAft">Weight AFT (tons)</label>
+                    <input type="number" step="0.01" id="weightAft" name="Weight AFT" required placeholder="0.00" oninput="calculateTotal()">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="weightTotal">Weight Total (Calculated)</label>
+                <input type="number" step="0.01" id="weightTotal" name="Weight Total" readonly placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="Notes" placeholder="Enter any additional multi-line remarks or details here..."></textarea>
+            </div>
+
+            <button type="submit">Submit & Email Report</button>
+        </form>
+    </div>
+
+    <script>
+        // Set today's date by default
+        document.getElementById('date').valueAsDate = new Date();
+
+        // Automatically calculate Total Weight
+        function calculateTotal() {
+            const fwd = parseFloat(document.getElementById('weightFwd').value) || 0;
+            const aft = parseFloat(document.getElementById('weightAft').value) || 0;
+            const total = fwd + aft;
+            
+            document.getElementById('weightTotal').value = total > 0 ? total.toFixed(2) : "";
+        }
+    </script>
+
+</body>
+</html>
