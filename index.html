@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vessel Data Entry</title>
+    <!-- Load the official jsPDF Library for offline PDF generation -->
+    <script src="https://cloudflare.com"></script>
     <style>
         :root {
             --primary: #ff6600;       /* Vibrant Orange */
@@ -135,7 +137,6 @@
             background-color: var(--primary-hover);
         }
 
-        /* Modal styling for the popup */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -183,7 +184,7 @@
     <div class="container">
         <h2>Vessel Data Report</h2>
         
-        <form id="vesselForm" onsubmit="prepareReport(event)">
+        <form id="vesselForm" onsubmit="generatePDFAndPrepareWhatsApp(event)">
             
             <div class="form-group">
                 <label for="vesselName">Vessel Name</label>
@@ -244,21 +245,19 @@
                 <textarea id="notes" placeholder="Enter any additional details here..."></textarea>
             </div>
 
-            <button type="submit">Compile Report</button>
+            <button type="submit">Generate PDF & Report</button>
         </form>
     </div>
 
-    <!-- Secure Popup View for User-Initiated Tap Actions -->
     <div class="modal-overlay" id="waModal">
         <div class="modal-box">
-            <h3 style="color: var(--primary); margin-bottom: 12px; text-transform: uppercase;">Report Ready!</h3>
-            <p>Your data block has been generated successfully. Tap below to select your target contact or group chat.</p>
+            <h3 style="color: var(--primary); margin-bottom: 12px; text-transform: uppercase;">PDF Saved!</h3>
+            <p>The formal PDF document has been downloaded to your device files. Tap below to share the summary block directly to your target contact or group.</p>
             <a href="#" id="waLink" class="wa-btn" target="_blank">Open WhatsApp</a>
         </div>
     </div>
 
     <script>
-        // Set today's date by default
         document.getElementById('date').valueAsDate = new Date();
 
         function calculateTotal() {
@@ -268,10 +267,10 @@
             document.getElementById('weightTotal').value = total > 0 ? total.toFixed(2) : "";
         }
 
-        function prepareReport(event) {
+        function generatePDFAndPrepareWhatsApp(event) {
             event.preventDefault();
 
-            // Fetch values from fields
+            // Fetch structural data values
             const vesselName = document.getElementById('vesselName').value;
             const vesselLength = document.getElementById('vesselLength').value;
             const date = document.getElementById('date').value;
@@ -282,26 +281,73 @@
             const weightTotal = document.getElementById('weightTotal').value;
             const notes = document.getElementById('notes').value || "None";
 
-            // Construct text payload block
-            const message = `*⚓ VESSEL DATA REPORT ⚓*\n\n` +
-                            `*Vessel Name:* ${vesselName}\n` +
-                            `*Length:* ${vesselLength}m\n` +
-                            `*Date:* ${date}\n\n` +
+            // --- PART A: GENERATE THE OFFLINE PDF FILE ---
+            const { jsPDF } = window.jspdf;
 Use code with caution.
+const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+// Layout Styling Variables (Standard A4 is 210mm wide)
+doc.setFont("helvetica", "bold");
+doc.setFontSize(22);
+doc.setTextColor(255, 102, 0); // Orange Title Header Line
+doc.text("VESSEL DATA REPORT", 20, 25);
+// Thin separating geometric rule line
+doc.setDrawColor(200, 200, 200);
+doc.setLineWidth(0.5);
+doc.line(20, 32, 190, 32);
+// Block Field Print Configuration
+doc.setFont("helvetica", "normal");
+doc.setFontSize(12);
+doc.setTextColor(30, 30, 30); // Clean Charcoal Text Body
+let yPosition = 45;
+const rowHeight = 10;
+const printRow = (label, value) => {
+doc.setFont("helvetica", "bold");
+doc.text(label, 20, yPosition);
+doc.setFont("helvetica", "normal");
+doc.text(String(value), 65, yPosition);
+yPosition += rowHeight;
+};
+printRow("Vessel Name:", vesselName);
+printRow("Vessel Length:", vesselLength + " meters");
+printRow("Report Date:", date);
+yPosition += 5; // Extra spacing break block
+printRow("Sling Type:", slingType);
+printRow("No. of Slings:", numSlings);
+yPosition += 5;
+printRow("Weight FWD:", weightFwd + " tons");
+printRow("Weight AFT:", weightAft + " tons");
+// Highlight the calculated total sum
+doc.setFont("helvetica", "bold");
+doc.text("Weight TOTAL:", 20, yPosition);
+doc.setTextColor(255, 102, 0); // Color calculation total row orange
+doc.text(weightTotal + " tons", 65, yPosition);
+// Reset standard text styling for long string paragraphs
+doc.setTextColor(30, 30, 30);
+yPosition += 15;
+doc.setFont("helvetica", "bold");
+doc.text("Notes / Remarks:", 20, yPosition);
+doc.setFont("helvetica", "normal");
+yPosition += 7;
+// Format notes cleanly to wrap box margins without running off page edge
+const splitNotes = doc.splitTextToSize(notes, 170);
+doc.text(splitNotes, 20, yPosition);
+// Instantly execute local background binary build save download
+const sanitizedFilename = Vessel_Report_${vesselName.replace(/[^a-z0-9]/gi, '_')}.pdf;
+doc.save(sanitizedFilename);
+// --- PART B: PREPARE WHATSAPP TEXT PAYLOAD HIGHLIGHTS ---
+const message = *⚓ VESSEL DATA REPORT ⚓*\n\n +
+*Vessel Name:* ${vesselName}\n +
+*Length:* ${vesselLength}m\n +
+*Date:* ${date}\n\n +
 *Sling Type:* ${slingType}\n +
 *No. of Slings:* ${numSlings}\n\n +
-*Weight FWD:* ${weightFwd} tons\n +
-*Weight AFT:* ${weightAft} tons\n +
 *Weight TOTAL:* ${weightTotal} tons\n\n +
-*Notes:* ${notes};
-// Generate clean web format deep link
+_(Full formal PDF downloaded to your device files)_;
 const secureUrl = https://wa.me{encodeURIComponent(message)};
-// Inject link into our physical button
 const btnLink = document.getElementById('waLink');
 btnLink.href = secureUrl;
-// Show popup box overlay cleanly
+// Trigger modal visual card render transition
 document.getElementById('waModal').style.display = 'flex';
-// Set up click handler to hide overlay immediately after user taps
 btnLink.onclick = function() {
 setTimeout(() => {
 document.getElementById('waModal').style.display = 'none';
