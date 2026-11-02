@@ -250,12 +250,19 @@
                             `*Weight TOTAL:* ${weightTotal} tons\n\n` +
                             `*Notes:* ${notes}`;
 
-            // Create a universal link. Omitting the phone number parameter forces 
-            // WhatsApp to open a picker so the user can select any Contact, Group, or Community.
-            const whatsappUrl = `https://whatsapp.com{encodeURIComponent(message)}`;
+            // 1. Try using the direct mobile application link protocol first
+            const dynamicUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
 
-            // Launch the chat app interface
-            window.open(whatsappUrl, '_blank');
+            // 2. Open the application interface
+            const newWindow = window.open(dynamicUrl, '_blank');
+
+            // 3. Fallback: If the browser blocks the native app protocol link, trigger the web platform fallback portal
+            setTimeout(() => {
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    const fallbackUrl = `https://whatsapp.com{encodeURIComponent(message)}`;
+                    window.open(fallbackUrl, '_self');
+                }
+            }, 500);
         }
     </script>
 
