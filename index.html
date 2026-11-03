@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vessel Data Entry</title>
-    <!-- Robust, modern jsPDF library link to prevent script freezes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary: #ff6600;       /* Vibrant Orange */
@@ -115,7 +113,7 @@
             gap: 16px;
         }
 
-        button, .wa-btn {
+        button {
             width: 100%;
             background-color: var(--primary);
             color: #000000;
@@ -128,48 +126,85 @@
             transition: background-color 0.2s;
             margin-top: 10px;
             text-transform: uppercase;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
         }
 
-        button:hover, .wa-btn:hover {
+        button:hover {
             background-color: var(--primary-hover);
         }
 
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
+        /* --- STYLES FOR THE SCREENSHOT PREVIEW TABLE --- */
+        #previewContainer {
+            display: none; /* Hidden by default */
+            background: #ffffff; /* Clean white background for clear photos */
+            color: #000000;
+            padding: 30px;
+            border-radius: 8px;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            z-index: 1000;
+            max-width: 500px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .modal-box {
-            background: #1a1a1a;
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 0 20px rgba(255, 102, 0, 0.3);
-        }
-
-        .modal-box p {
+        .report-header {
+            border-bottom: 3px solid #ff6600;
+            padding-bottom: 10px;
             margin-bottom: 20px;
-            font-size: 16px;
+            text-align: center;
+        }
+
+        .report-header h3 {
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #111111;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .report-table th, .report-table td {
+            border: 1px solid #dddddd;
+            padding: 12px;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        .report-table th {
+            background-color: #f8f9fa;
+            font-weight: 700;
+            width: 40%;
+        }
+
+        .total-row {
+            background-color: #fff3e6 !important;
+            color: #d45500;
+            font-weight: bold;
+        }
+
+        .notes-section {
+            border: 1px solid #dddddd;
+            padding: 15px;
+            border-radius: 4px;
+            background: #fafafa;
+            margin-bottom: 25px;
+            min-height: 80px;
+            font-size: 14px;
             line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .back-btn {
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .back-btn:hover {
+            background-color: #444444;
         }
 
         @media (max-width: 480px) {
-            .container {
+            .container, #previewContainer {
                 padding: 20px;
             }
             .grid-row {
@@ -181,10 +216,11 @@
 </head>
 <body>
 
-    <div class="container">
+    <!-- SECTION 1: THE INPUT FORM (Lives in Dark Mode) -->
+    <div class="container" id="formContainer">
         <h2>Vessel Data Report</h2>
         
-        <form id="vesselForm" onsubmit="generatePDFAndPrepareWhatsApp(event)">
+        <form id="vesselForm" onsubmit="showScreenshotTable(event)">
             
             <div class="form-group">
                 <label for="vesselName">Vessel Name</label>
@@ -245,115 +281,91 @@
                 <textarea id="notes" placeholder="Enter any additional details here..."></textarea>
             </div>
 
-            <button type="submit">Generate PDF & Report</button>
+            <button type="submit">Generate Report Picture</button>
         </form>
     </div>
 
-    <div class="modal-overlay" id="waModal">
-        <div class="modal-box">
-            <h3 style="color: var(--primary); margin-bottom: 12px; text-transform: uppercase;">PDF Saved!</h3>
-            <p>The formal PDF document has been downloaded to your device files. Tap below to share the summary block directly to your target contact or group.</p>
-            <a href="#" id="waLink" class="wa-btn" target="_blank">Open WhatsApp</a>
+    <!-- SECTION 2: THE SCREENSHOT TABLE VIEW (Swaps to high-visibility crisp white print mode) -->
+    <div id="previewContainer">
+        <div class="report-header">
+            <h3>Official Vessel Report</h3>
         </div>
-    </div>
-
-    <script>
-        document.getElementById('date').valueAsDate = new Date();
-
-        function calculateTotal() {
-            const fwd = parseFloat(document.getElementById('weightFwd').value) || 0;
-            const aft = parseFloat(document.getElementById('weightAft').value) || 0;
-            const total = fwd + aft;
-            document.getElementById('weightTotal').value = total > 0 ? total.toFixed(2) : "";
-        }
-
-        function generatePDFAndPrepareWhatsApp(event) {
-            event.preventDefault();
-
-            // Fetch data entries
-            const vesselName = document.getElementById('vesselName').value;
-            const vesselLength = document.getElementById('vesselLength').value;
-            const date = document.getElementById('date').value;
-            const slingType = document.getElementById('slingType').value;
-            const numSlings = document.getElementById('numSlings').value;
-            const weightFwd = document.getElementById('weightFwd').value;
-            const weightAft = document.getElementById('weightAft').value;
-            const weightTotal = document.getElementById('weightTotal').value;
-            const notes = document.getElementById('notes').value || "None";
-
-            try {
-                // Safeguarded Initialization Pattern for jsPDF
-                const { jsPDF } = window.jspdf ? window.jspdf : window;
+        
+        <table class="report-table">
+            <tr>
+                <th>Vessel Name</th>
+                <td id="pVesselName">--</td>
+            </tr>
+            <tr>
+                <th>Vessel Length</th>
+                <td id="pVesselLength">--</td>
+            </tr>
+            <tr>
+                <th>Date</th>
+                <td id="pDate">--</td>
+            </tr>
+            <tr>
+                <th>Sling Type</th>
+                <td id="pSlingType">--</td>
+            </tr>
+            <tr>
+                <th>Number of Slings</th>
+                <td id="pNumSlings">--</td>
+            </tr>
+            <tr>
+                <th>Weight FWD</th>
+                <td id="pWeightFwd">--</td>
+            </tr>
+            <tr>
+                <th>Weight AFT</th>
 Use code with caution.
-const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-// Design Title
-doc.setFont("helvetica", "bold");
-doc.setFontSize(22);
-doc.setTextColor(255, 102, 0);
-doc.text("VESSEL DATA REPORT", 20, 25);
-// Separator Rule Line
-doc.setDrawColor(200, 200, 200);
-doc.setLineWidth(0.5);
-doc.line(20, 32, 190, 32);
-// Setup content block printing
-doc.setFont("helvetica", "normal");
-doc.setFontSize(12);
-doc.setTextColor(30, 30, 30);
-let yPosition = 45;
-const rowHeight = 10;
-const printRow = (label, value) => {
-doc.setFont("helvetica", "bold");
-doc.text(label, 20, yPosition);
-doc.setFont("helvetica", "normal");
-doc.text(String(value), 65, yPosition);
-yPosition += rowHeight;
-};
-printRow("Vessel Name:", vesselName);
-printRow("Vessel Length:", vesselLength + " meters");
-printRow("Report Date:", date);
-yPosition += 5;
-printRow("Sling Type:", slingType);
-printRow("No. of Slings:", numSlings);
-yPosition += 5;
-printRow("Weight FWD:", weightFwd + " tons");
-printRow("Weight AFT:", weightAft + " tons");
-doc.setFont("helvetica", "bold");
-doc.text("Weight TOTAL:", 20, yPosition);
-doc.setTextColor(255, 102, 0);
-doc.text(weightTotal + " tons", 65, yPosition);
-doc.setTextColor(30, 30, 30);
-yPosition += 15;
-doc.setFont("helvetica", "bold");
-doc.text("Notes / Remarks:", 20, yPosition);
-doc.setFont("helvetica", "normal");
-yPosition += 7;
-const splitNotes = doc.splitTextToSize(notes, 170);
-doc.text(splitNotes, 20, yPosition);
-// Build & trigger PDF download
-const sanitizedFilename = Vessel_Report_${vesselName.replace(/[^a-z0-9]/gi, '_')}.pdf;
-doc.save(sanitizedFilename);
-} catch (err) {
-console.error("PDF Generation failed, bypassing directly to WhatsApp launcher:", err);
-}
-// --- WhatsApp Integration Link Loader ---
-const message = *⚓ VESSEL DATA REPORT ⚓*\n\n +
-*Vessel Name:* ${vesselName}\n +
-*Length:* ${vesselLength}m\n +
-*Date:* ${date}\n\n +
-*Sling Type:* ${slingType}\n +
-*No. of Slings:* ${numSlings}\n\n +
-*Weight TOTAL:* ${weightTotal} tons\n\n +
-_(Full formal PDF downloaded to your device files)_;
-const secureUrl = https://wa.me{encodeURIComponent(message)};
-const btnLink = document.getElementById('waLink');
-btnLink.href = secureUrl;
-// Open popup interaction element
-document.getElementById('waModal').style.display = 'flex';
-btnLink.onclick = function() {
-setTimeout(() => {
-document.getElementById('waModal').style.display = 'none';
-document.getElementById('vesselForm').reset();
+--
+Weight Total
+--
+Notes / Remarks:
+--
+📸 Take a mobile screenshot now to save and send via WhatsApp
+⬅ Back & Edit
+// 1. Auto-populate today's date perfectly right away
 document.getElementById('date').valueAsDate = new Date();
-}, 300);
-};
+// 2. Continuous real-time weight auto-sum calculation
+function calculateTotal() {
+const fwd = parseFloat(document.getElementById('weightFwd').value) || 0;
+const aft = parseFloat(document.getElementById('weightAft').value) || 0;
+const total = fwd + aft;
+document.getElementById('weightTotal').value = total > 0 ? total.toFixed(2) : "";
+}
+// 3. Hide the input fields and show the beautiful clean table view
+function showScreenshotTable(event) {
+event.preventDefault(); // Stop the form from clearing out or refreshing!
+// Pull entries out of inputs
+const name = document.getElementById('vesselName').value;
+const length = document.getElementById('vesselLength').value;
+const dt = document.getElementById('date').value;
+const sling = document.getElementById('slingType').value;
+const num = document.getElementById('numSlings').value;
+const fwd = document.getElementById('weightFwd').value;
+const aft = document.getElementById('weightAft').value;
+const total = document.getElementById('weightTotal').value || "0.00";
+const remarks = document.getElementById('notes').value || "No remarks entered.";
+// Inject entries into the screenshot table fields
+document.getElementById('pVesselName').innerText = name;
+document.getElementById('pVesselLength').innerText = length + " m";
+document.getElementById('pDate').innerText = dt;
+document.getElementById('pSlingType').innerText = sling;
+document.getElementById('pNumSlings').innerText = num;
+document.getElementById('pWeightFwd').innerText = fwd + " tons";
+document.getElementById('pWeightAft').innerText = aft + " tons";
+document.getElementById('pWeightTotal').innerText = total + " tons";
+document.getElementById('pNotes').innerText = remarks;
+// Swap visual views instantly
+document.getElementById('formContainer').style.display = 'none';
+document.getElementById('previewContainer').style.display = 'block';
+document.body.style.backgroundColor = '#f4f6f9'; // Temporarily match clean light grey theme background
+}
+// 4. Go back to dark entry form without losing what you typed
+function hideScreenshotTable() {
+document.getElementById('previewContainer').style.display = 'none';
+document.getElementById('formContainer').style.display = 'block';
+document.body.style.backgroundColor = '#121212'; // Return to deep black theme background
 }
