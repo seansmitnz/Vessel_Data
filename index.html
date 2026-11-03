@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vessel Data Entry</title>
-    <!-- Load the official jsPDF Library for offline PDF generation -->
-    <script src="https://cloudflare.com"></script>
+    <!-- Robust, modern jsPDF library link to prevent script freezes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary: #ff6600;       /* Vibrant Orange */
@@ -270,7 +270,7 @@
         function generatePDFAndPrepareWhatsApp(event) {
             event.preventDefault();
 
-            // Fetch structural data values
+            // Fetch data entries
             const vesselName = document.getElementById('vesselName').value;
             const vesselLength = document.getElementById('vesselLength').value;
             const date = document.getElementById('date').value;
@@ -281,23 +281,24 @@
             const weightTotal = document.getElementById('weightTotal').value;
             const notes = document.getElementById('notes').value || "None";
 
-            // --- PART A: GENERATE THE OFFLINE PDF FILE ---
-            const { jsPDF } = window.jspdf;
+            try {
+                // Safeguarded Initialization Pattern for jsPDF
+                const { jsPDF } = window.jspdf ? window.jspdf : window;
 Use code with caution.
 const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-// Layout Styling Variables (Standard A4 is 210mm wide)
+// Design Title
 doc.setFont("helvetica", "bold");
 doc.setFontSize(22);
-doc.setTextColor(255, 102, 0); // Orange Title Header Line
+doc.setTextColor(255, 102, 0);
 doc.text("VESSEL DATA REPORT", 20, 25);
-// Thin separating geometric rule line
+// Separator Rule Line
 doc.setDrawColor(200, 200, 200);
 doc.setLineWidth(0.5);
 doc.line(20, 32, 190, 32);
-// Block Field Print Configuration
+// Setup content block printing
 doc.setFont("helvetica", "normal");
 doc.setFontSize(12);
-doc.setTextColor(30, 30, 30); // Clean Charcoal Text Body
+doc.setTextColor(30, 30, 30);
 let yPosition = 45;
 const rowHeight = 10;
 const printRow = (label, value) => {
@@ -310,31 +311,31 @@ yPosition += rowHeight;
 printRow("Vessel Name:", vesselName);
 printRow("Vessel Length:", vesselLength + " meters");
 printRow("Report Date:", date);
-yPosition += 5; // Extra spacing break block
+yPosition += 5;
 printRow("Sling Type:", slingType);
 printRow("No. of Slings:", numSlings);
 yPosition += 5;
 printRow("Weight FWD:", weightFwd + " tons");
 printRow("Weight AFT:", weightAft + " tons");
-// Highlight the calculated total sum
 doc.setFont("helvetica", "bold");
 doc.text("Weight TOTAL:", 20, yPosition);
-doc.setTextColor(255, 102, 0); // Color calculation total row orange
+doc.setTextColor(255, 102, 0);
 doc.text(weightTotal + " tons", 65, yPosition);
-// Reset standard text styling for long string paragraphs
 doc.setTextColor(30, 30, 30);
 yPosition += 15;
 doc.setFont("helvetica", "bold");
 doc.text("Notes / Remarks:", 20, yPosition);
 doc.setFont("helvetica", "normal");
 yPosition += 7;
-// Format notes cleanly to wrap box margins without running off page edge
 const splitNotes = doc.splitTextToSize(notes, 170);
 doc.text(splitNotes, 20, yPosition);
-// Instantly execute local background binary build save download
+// Build & trigger PDF download
 const sanitizedFilename = Vessel_Report_${vesselName.replace(/[^a-z0-9]/gi, '_')}.pdf;
 doc.save(sanitizedFilename);
-// --- PART B: PREPARE WHATSAPP TEXT PAYLOAD HIGHLIGHTS ---
+} catch (err) {
+console.error("PDF Generation failed, bypassing directly to WhatsApp launcher:", err);
+}
+// --- WhatsApp Integration Link Loader ---
 const message = *⚓ VESSEL DATA REPORT ⚓*\n\n +
 *Vessel Name:* ${vesselName}\n +
 *Length:* ${vesselLength}m\n +
@@ -346,7 +347,7 @@ _(Full formal PDF downloaded to your device files)_;
 const secureUrl = https://wa.me{encodeURIComponent(message)};
 const btnLink = document.getElementById('waLink');
 btnLink.href = secureUrl;
-// Trigger modal visual card render transition
+// Open popup interaction element
 document.getElementById('waModal').style.display = 'flex';
 btnLink.onclick = function() {
 setTimeout(() => {
